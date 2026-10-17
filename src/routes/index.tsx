@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Activity, CalendarClock, HelpCircle, CheckCircle2, LayoutDashboard, Users, ListTodo } from "lucide-react";
+import { Activity, CalendarClock, HelpCircle, CheckCircle2, LayoutDashboard, Users, ListTodo, Bell, Check } from "lucide-react";
 import { members, tasks, type Status } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/")({
@@ -27,15 +27,18 @@ const statusStyle: Record<Status, string> = {
 const fmt = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("pt-BR");
 
 function Index() {
+  const [taskList, setTaskList] = useState(tasks);
   const [filtro, setFiltro] = useState("todos");
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const week = new Date(today); week.setDate(today.getDate() + 7);
-  const ativas = tasks.filter((t) => t.status !== "Concluído");
+  const ativas = taskList.filter((t) => t.status !== "Concluído");
   const vencendo = ativas.filter((t) => { const p = new Date(t.prazo + "T00:00:00"); return p >= today && p <= week; });
-  const duvidas = tasks.filter((t) => t.status === "Dúvida");
-  const aprov = tasks.filter((t) => t.status === "Aguardando Aprovação");
-  const lista = filtro === "todos" ? tasks : tasks.filter((t) => t.membro === filtro);
+  const duvidas = taskList.filter((t) => t.status === "Dúvida");
+  const aprov = taskList.filter((t) => t.status === "Aguardando Aprovação");
+  const lista = filtro === "todos" ? taskList : taskList.filter((t) => t.membro === filtro);
   const nome = (id: string) => members.find((m) => m.id === id)?.nome ?? id;
+  const setStatus = (os: string, status: Status) =>
+    setTaskList((prev) => prev.map((t) => (t.os === os ? { ...t, status } : t)));
 
   const kpis = [
     { label: "Tarefas Ativas", value: ativas.length, icon: Activity, cls: "border-border", ic: "text-primary bg-primary/10" },
@@ -73,7 +76,7 @@ function Index() {
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground"><Users className="h-4 w-4" />Visão Geral da Equipe</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {members.map((m) => {
-              const mt = tasks.filter((t) => t.membro === m.id);
+              const mt = taskList.filter((t) => t.membro === m.id);
               const done = mt.filter((t) => t.status === "Concluído").length;
               const pct = Math.round((done / mt.length) * 100);
               const initials = m.nome.split(" ").map((p) => p[0]).join("");
@@ -108,7 +111,7 @@ function Index() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
-                <tr><th className="px-4 py-3">Código OS</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Atividade</th><th className="px-4 py-3">Responsável</th><th className="px-4 py-3">Prazo</th><th className="px-4 py-3">Status</th></tr>
+                <tr><th className="px-4 py-3">Código OS</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Atividade</th><th className="px-4 py-3">Responsável</th><th className="px-4 py-3">Prazo</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Ações</th></tr>
               </thead>
               <tbody>
                 {lista.map((t) => {
@@ -121,6 +124,27 @@ function Index() {
                       <td className="px-4 py-3 text-foreground">{nome(t.membro)}</td>
                       <td className={`px-4 py-3 whitespace-nowrap ${late ? "font-semibold text-destructive" : "text-foreground"}`}>{fmt(t.prazo)}</td>
                       <td className="px-4 py-3"><span className={`whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyle[t.status]}`}>{t.status}</span></td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        {t.status === "Dúvida" ? (
+                          <button onClick={() => setStatus(t.os, "Em Andamento")}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-success/40 bg-success/15 px-2.5 py-1.5 text-xs font-medium text-success transition hover:bg-success/25">
+                            <Check className="h-3.5 w-3.5" />Dúvida Resolvida
+                          </button>
+                        ) : t.status === "Em Andamento" ? (
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setStatus(t.os, "Dúvida")}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-warning/40 bg-warning/15 px-2.5 py-1.5 text-xs font-medium text-warning-foreground transition hover:bg-warning/25">
+                              <Bell className="h-3.5 w-3.5" />Pedir Ajuda
+                            </button>
+                            <button onClick={() => setStatus(t.os, "Aguardando Aprovação")}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-success/40 bg-success/15 px-2.5 py-1.5 text-xs font-medium text-success transition hover:bg-success/25">
+                              <Check className="h-3.5 w-3.5" />Pronto para Aprovação
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
