@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Activity, CalendarClock, HelpCircle, CheckCircle2, LayoutDashboard, Users, ListTodo, Bell, Check } from "lucide-react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { Activity, CalendarClock, HelpCircle, CheckCircle2, LayoutDashboard, Users, ListTodo, Bell, Check, Upload, RotateCcw, Loader2, FileSpreadsheet } from "lucide-react";
 import { members, tasks, type Status } from "@/lib/mock-data";
+import { Button } from "@/components/ui/button";
+import { STORAGE_KEY, restoreState, updateStatus, getKpis, importSpreadsheet, type DeskState } from "@/lib/flowdesk-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,24 +29,70 @@ const statusStyle: Record<Status, string> = {
 const fmt = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("pt-BR");
 
 function Index() {
-  const [taskList, setTaskList] = useState(tasks);
+  const [desk, setDesk] = useState<DeskState>({ members, tasks, source: null });
+  const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [storageError, setStorageError] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null);
   const [filtro, setFiltro] = useState("todos");
+  const taskList = desk.tasks;
+  const team = desk.members;
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setDesk(restoreState(raw));
+    } catch {
+      setStorageError("Não foi possível recuperar os dados salvos neste navegador.");
+    }
+    setReady(true);
+  }, []);
+  useEffect(() => {
+    if (!ready) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(desk));
+      setStorageError("");
+    } catch {
+      setStorageError("O navegador não permitiu salvar os dados. As alterações podem se perder ao atualizar a página.");
+    }
+  }, [desk, ready]);
+
+  async function loadFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setError("");
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      setError("Selecione um arquivo Excel com extensão .xlsx.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const imported = await importSpreadsheet(await file.arrayBuffer(), file.name);
+      setDesk(imported);
+      setFiltro("todos");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível importar a planilha. Os dados atuais foram mantidos.");
+    } finally { setLoading(false); }
+  }
+  function resetExamples() {
+    if (!window.confirm("Voltar para dados de exemplo? As tarefas atuais e suas marcações serão substituídas.")) return;
+    setDesk({ members, tasks, source: null });
+    setFiltro("todos");
+    setError("");
+  }
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const week = new Date(today); week.setDate(today.getDate() + 7);
-  const ativas = taskList.filter((t) => t.status !== "Concluído");
-  const vencendo = ativas.filter((t) => { const p = new Date(t.prazo + "T00:00:00"); return p >= today && p <= week; });
-  const duvidas = taskList.filter((t) => t.status === "Dúvida");
-  const aprov = taskList.filter((t) => t.status === "Aguardando Aprovação");
+  const counts = getKpis(taskList, today);
   const lista = filtro === "todos" ? taskList : taskList.filter((t) => t.membro === filtro);
-  const nome = (id: string) => members.find((m) => m.id === id)?.nome ?? id;
+  const nome = (id: string) => team.find((m) => m.id === id)?.nome ?? id;
   const setStatus = (os: string, status: Status) =>
-    setTaskList((prev) => prev.map((t) => (t.os === os ? { ...t, status } : t)));
+    setDesk((prev) => ({ ...prev, tasks: updateStatus(prev.tasks, os, status) }));
 
   const kpis = [
-    { label: "Tarefas Ativas", value: ativas.length, icon: Activity, cls: "border-border", ic: "text-primary bg-primary/10" },
-    { label: "Vencendo nesta Semana", value: vencendo.length, icon: CalendarClock, cls: "border-border", ic: "text-foreground bg-muted" },
-    { label: "Dúvidas Pendentes", value: duvidas.length, icon: HelpCircle, cls: "border-warning bg-warning/10", ic: "text-warning-foreground bg-warning/30" },
-    { label: "Prontas para Aprovação", value: aprov.length, icon: CheckCircle2, cls: "border-success bg-success/10", ic: "text-success bg-success/15" },
+    { label: "Tarefas Ativas", value: counts.active, icon: Activity, cls: "border-border", ic: "text-primary bg-primary/10" },
+    { label: "Vencendo nesta Semana", value: counts.due, icon: CalendarClock, cls: "border-border", ic: "text-foreground bg-muted" },
+    { label: "Dúvidas Pendentes", value: counts.doubts, icon: HelpCircle, cls: "border-warning bg-warning/10", ic: "text-warning-foreground bg-warning/30" },
+    { label: "Prontas para Aprovação", value: counts.approval, icon: CheckCircle2, cls: "border-success bg-success/10", ic: "text-success bg-success/15" },
   ];
 
   return (
@@ -60,6 +108,29 @@ function Index() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-8 px-4 py-8">
+        <section className="border-b border-border pb-6" aria-label="Planilha do mês">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <FileSpreadsheet className="h-6 w-6 shrink-0 text-primary" />
+              <div className="min-w-0">
+                <h2 className="font-semibold text-foreground">Planilha do Mês</h2>
+                <p className="break-all text-sm text-muted-foreground" role="status">{desk.source ?? "Dados de exemplo"}</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <input ref={fileInput} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" aria-label="Carregar Planilha do Mês (.xlsx)" onChange={loadFile} disabled={!ready || loading} />
+              <Button className="h-auto min-h-9 whitespace-normal text-left" onClick={() => fileInput.current?.click()} disabled={!ready || loading}>
+                {loading ? <Loader2 className="animate-spin" /> : <Upload />}
+                {loading ? "Carregando planilha…" : "Carregar Planilha do Mês (.xlsx)"}
+              </Button>
+              <Button size="sm" variant="ghost" className="h-auto whitespace-normal text-muted-foreground" onClick={resetExamples} disabled={!ready || loading}>
+                <RotateCcw />Voltar para dados de exemplo
+              </Button>
+            </div>
+          </div>
+          {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
+          {storageError && <p role="alert" className="mt-3 text-sm text-warning-foreground">{storageError}</p>}
+        </section>
         <section>
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">KPIs do Mês</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -75,10 +146,10 @@ function Index() {
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground"><Users className="h-4 w-4" />Visão Geral da Equipe</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {members.map((m) => {
+            {team.map((m) => {
               const mt = taskList.filter((t) => t.membro === m.id);
               const done = mt.filter((t) => t.status === "Concluído").length;
-              const pct = Math.round((done / mt.length) * 100);
+              const pct = mt.length ? Math.round((done / mt.length) * 100) : 0;
               const initials = m.nome.split(" ").map((p) => p[0]).join("");
               return (
                 <button key={m.id} onClick={() => setFiltro(m.id)}
@@ -100,7 +171,7 @@ function Index() {
           <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-foreground"><ListTodo className="h-5 w-5 text-primary" />Tarefas ({lista.length})</h2>
             <div className="flex flex-wrap gap-2">
-              {[{ id: "todos", nome: "Todos" }, ...members].map((m) => (
+              {[{ id: "todos", nome: "Todos" }, ...team].map((m) => (
                 <button key={m.id} onClick={() => setFiltro(m.id)}
                   className={`rounded-full border px-3 py-1 text-xs font-medium transition ${filtro === m.id ? "border-primary bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}>
                   {m.id === "todos" ? "Todos" : m.nome.split(" ")[0]}
@@ -114,6 +185,7 @@ function Index() {
                 <tr><th className="px-4 py-3">Código OS</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Atividade</th><th className="px-4 py-3">Responsável</th><th className="px-4 py-3">Prazo</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Ações</th></tr>
               </thead>
               <tbody>
+                {lista.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhuma tarefa para este membro.</td></tr>}
                 {lista.map((t) => {
                   const late = t.status !== "Concluído" && new Date(t.prazo + "T00:00:00") < today;
                   return (
