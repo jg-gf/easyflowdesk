@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Activity, CalendarClock, HelpCircle, CheckCircle2, LayoutDashboard, Users, ListTodo } from "lucide-react";
+import { Activity, CalendarClock, HelpCircle, CheckCircle2, LayoutDashboard, Users, ListTodo, Bell, Check } from "lucide-react";
 import { members, tasks, type Status } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/")({
@@ -27,15 +27,18 @@ const statusStyle: Record<Status, string> = {
 const fmt = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("pt-BR");
 
 function Index() {
+  const [taskList, setTaskList] = useState(tasks);
   const [filtro, setFiltro] = useState("todos");
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const week = new Date(today); week.setDate(today.getDate() + 7);
-  const ativas = tasks.filter((t) => t.status !== "Concluído");
+  const ativas = taskList.filter((t) => t.status !== "Concluído");
   const vencendo = ativas.filter((t) => { const p = new Date(t.prazo + "T00:00:00"); return p >= today && p <= week; });
-  const duvidas = tasks.filter((t) => t.status === "Dúvida");
-  const aprov = tasks.filter((t) => t.status === "Aguardando Aprovação");
-  const lista = filtro === "todos" ? tasks : tasks.filter((t) => t.membro === filtro);
+  const duvidas = taskList.filter((t) => t.status === "Dúvida");
+  const aprov = taskList.filter((t) => t.status === "Aguardando Aprovação");
+  const lista = filtro === "todos" ? taskList : taskList.filter((t) => t.membro === filtro);
   const nome = (id: string) => members.find((m) => m.id === id)?.nome ?? id;
+  const setStatus = (os: string, status: Status) =>
+    setTaskList((prev) => prev.map((t) => (t.os === os ? { ...t, status } : t)));
 
   const kpis = [
     { label: "Tarefas Ativas", value: ativas.length, icon: Activity, cls: "border-border", ic: "text-primary bg-primary/10" },
