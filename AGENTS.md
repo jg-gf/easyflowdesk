@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep spreadsheet parsing, persisted-state validation, status transitions, and KPI calculations in `src/lib/flowdesk-data.ts` so import rules can be tested independently of the UI.
+- Load SheetJS only from the browser file-selection flow and persist the complete team/task state in versioned localStorage; monthly spreadsheets must never be uploaded.
