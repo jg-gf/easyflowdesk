@@ -76,7 +76,7 @@ function Index() {
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground"><Users className="h-4 w-4" />Visão Geral da Equipe</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {members.map((m) => {
-              const mt = tasks.filter((t) => t.membro === m.id);
+              const mt = taskList.filter((t) => t.membro === m.id);
               const done = mt.filter((t) => t.status === "Concluído").length;
               const pct = Math.round((done / mt.length) * 100);
               const initials = m.nome.split(" ").map((p) => p[0]).join("");
@@ -111,7 +111,7 @@ function Index() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
-                <tr><th className="px-4 py-3">Código OS</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Atividade</th><th className="px-4 py-3">Responsável</th><th className="px-4 py-3">Prazo</th><th className="px-4 py-3">Status</th></tr>
+                <tr><th className="px-4 py-3">Código OS</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Atividade</th><th className="px-4 py-3">Responsável</th><th className="px-4 py-3">Prazo</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Ações</th></tr>
               </thead>
               <tbody>
                 {lista.map((t) => {
