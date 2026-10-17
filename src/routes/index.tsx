@@ -124,6 +124,27 @@ function Index() {
                       <td className="px-4 py-3 text-foreground">{nome(t.membro)}</td>
                       <td className={`px-4 py-3 whitespace-nowrap ${late ? "font-semibold text-destructive" : "text-foreground"}`}>{fmt(t.prazo)}</td>
                       <td className="px-4 py-3"><span className={`whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyle[t.status]}`}>{t.status}</span></td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        {t.status === "Dúvida" ? (
+                          <button onClick={() => setStatus(t.os, "Em Andamento")}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-success/40 bg-success/15 px-2.5 py-1.5 text-xs font-medium text-success transition hover:bg-success/25">
+                            <Check className="h-3.5 w-3.5" />Dúvida Resolvida
+                          </button>
+                        ) : t.status === "Em Andamento" ? (
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setStatus(t.os, "Dúvida")}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-warning/40 bg-warning/15 px-2.5 py-1.5 text-xs font-medium text-warning-foreground transition hover:bg-warning/25">
+                              <Bell className="h-3.5 w-3.5" />Pedir Ajuda
+                            </button>
+                            <button onClick={() => setStatus(t.os, "Aguardando Aprovação")}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-success/40 bg-success/15 px-2.5 py-1.5 text-xs font-medium text-success transition hover:bg-success/25">
+                              <Check className="h-3.5 w-3.5" />Pronto para Aprovação
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
