@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Activity, CalendarClock, HelpCircle, CheckCircle2, LayoutDashboard, Users, ListTodo, Bell, Check, Upload, RotateCcw, Loader2, FileSpreadsheet } from "lucide-react";
 import { members, tasks, type Status } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { STORAGE_KEY, restoreState, updateStatus, getKpis, importSpreadsheet, type DeskState } from "@/lib/flowdesk-data";
 
 export const Route = createFileRoute("/")({
@@ -103,7 +104,10 @@ function Index() {
             <div className="rounded-lg bg-sidebar-primary p-2"><LayoutDashboard className="h-5 w-5 text-sidebar-primary-foreground" /></div>
             <h1 className="text-lg font-semibold sm:text-xl">FlowDesk - Gestão de Divisão de Engenharia</h1>
           </div>
-          <p className="text-sm capitalize opacity-75">{new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</p>
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
+            <p className="text-sm capitalize opacity-75">{new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</p>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 

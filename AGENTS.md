@@ -11,3 +11,4 @@
 
 - Keep spreadsheet parsing, persisted-state validation, status transitions, and KPI calculations in `src/lib/flowdesk-data.ts` so import rules can be tested independently of the UI.
 - Load SheetJS only from the browser file-selection flow and persist the complete team/task state in versioned localStorage; monthly spreadsheets must never be uploaded.
+- Keep theme selection in the header's `ThemeToggle`, applying the document-level dark class after hydration and saving it independently from task data so data resets do not reset the theme.
