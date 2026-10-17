@@ -20,8 +20,8 @@ describe("FlowDesk Excel import", () => {
   it("reads native Excel dates and the 1904 date system", async () => {
     const regular = await importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["A", 46313]] }), "a.xlsx");
     const legacy = await importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["A", 44851]] }, true), "b.xlsx");
-    expect(regular.tasks[0].prazo).toBe("2026-10-18");
-    expect(legacy.tasks[0].prazo).toBe("2026-10-18");
+    expect(regular.tasks[0]?.prazo).toBe("2026-10-18");
+    expect(legacy.tasks[0]?.prazo).toBe("2026-10-18");
   });
   it("rejects invalid dates with sheet and row context", async () => {
     await expect(importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["A", "31/02/2026"]] }), "a.xlsx")).rejects.toThrow("linha 2: Prazo inválido");
@@ -36,15 +36,19 @@ describe("FlowDesk Excel import", () => {
     const state = await importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["A", "18/10/2026"], ["B", "30/10/2026"]] }), "a.xlsx");
     const now = new Date("2026-10-17T12:00:00");
     expect(getKpis(state.tasks, now)).toEqual({ active: 2, due: 1, doubts: 0, approval: 0 });
-    const doubt = updateStatus(state.tasks, state.tasks[0].os, "Dúvida");
+    const [first, second] = state.tasks;
+    if (!first || !second) throw new Error("Expected two imported tasks");
+    const doubt = updateStatus(state.tasks, first.os, "Dúvida");
     expect(getKpis(doubt, now).doubts).toBe(1);
-    const resolved = updateStatus(doubt, state.tasks[0].os, "Em Andamento");
+    const resolved = updateStatus(doubt, first.os, "Em Andamento");
     expect(getKpis(resolved, now).doubts).toBe(0);
-    expect(getKpis(updateStatus(resolved, state.tasks[1].os, "Aguardando Aprovação"), now).approval).toBe(1);
+    expect(getKpis(updateStatus(resolved, second.os, "Aguardando Aprovação"), now).approval).toBe(1);
   });
   it("restores imported members, tasks, and help markings from saved JSON", async () => {
     const state = await importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["A", "18/10/2026"]] }), "a.xlsx");
-    state.tasks = updateStatus(state.tasks, state.tasks[0].os, "Dúvida");
+    const first = state.tasks[0];
+    if (!first) throw new Error("Expected an imported task");
+    state.tasks = updateStatus(state.tasks, first.os, "Dúvida");
     localStorage.setItem("flowdesk-test", JSON.stringify(state));
     expect(restoreState(localStorage.getItem("flowdesk-test") ?? "")).toEqual(state);
     localStorage.removeItem("flowdesk-test");

@@ -60,7 +60,7 @@ export async function importSpreadsheet(buffer: ArrayBuffer, filename: string): 
     } else {
       const text = String(value ?? "").trim();
       const br = text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
-      result = br ? `${br[3]}-${br[2].padStart(2, "0")}-${br[1].padStart(2, "0")}` : text;
+      result = br?.[1] && br[2] && br[3] ? `${br[3]}-${br[2].padStart(2, "0")}-${br[1].padStart(2, "0")}` : text;
     }
     return dateSchema.safeParse(result).success ? result : null;
   }
