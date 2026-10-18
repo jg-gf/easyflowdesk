@@ -140,17 +140,31 @@ function Index() {
           {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
           {storageError && <p role="alert" className="mt-3 text-sm text-warning-foreground">{storageError}</p>}
         </section>
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">KPIs do Mês</h2>
+        <section aria-label="KPIs do mês">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">KPIs do Mês</h2>
+            {filtroAtivo ? (
+              <button type="button" onClick={() => setFiltro(FILTER_ALL)}
+                className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted">
+                <X className="h-3 w-3" />Voltar à visão completa
+              </button>
+            ) : <p className="text-xs text-muted-foreground">Clique em um indicador para filtrar a tabela.</p>}
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {kpis.map((k) => (
-              <div key={k.label} className={`flex items-center gap-4 rounded-xl border bg-card p-5 shadow-sm ${k.cls}`}>
-                <div className={`rounded-lg p-3 ${k.ic}`}><k.icon className="h-6 w-6" /></div>
-                <div><p className="text-3xl font-bold text-foreground">{k.value}</p><p className="text-sm text-muted-foreground">{k.label}</p></div>
-              </div>
-            ))}
+            {kpis.map((k) => {
+              const ativo = filtro === k.filter;
+              return (
+                <button key={k.label} type="button" aria-pressed={ativo} title={`Filtrar tabela por ${k.label.toLowerCase()}`}
+                  onClick={() => setFiltro(ativo ? FILTER_ALL : k.filter)}
+                  className={`flex items-center gap-4 rounded-xl border bg-card p-5 text-left shadow-sm transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${k.cls} ${ativo ? "border-primary ring-2 ring-primary/25" : ""}`}>
+                  <div className={`rounded-lg p-3 ${k.ic}`}><k.icon className="h-6 w-6" /></div>
+                  <div><p className="text-3xl font-bold text-foreground">{k.value}</p><p className="text-sm text-muted-foreground">{k.label}</p></div>
+                </button>
+              );
+            })}
           </div>
         </section>
+
 
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground"><Users className="h-4 w-4" />Visão Geral da Equipe</h2>
@@ -180,21 +194,28 @@ function Index() {
           <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-foreground"><ListTodo className="h-5 w-5 text-primary" />Tarefas ({lista.length})</h2>
             <div className="flex flex-wrap gap-2">
-              {[{ id: "todos", nome: "Todos" }, ...team].map((m) => (
+              {[{ id: FILTER_ALL, nome: "Todos" }, ...team].map((m) => (
                 <button key={m.id} onClick={() => setFiltro(m.id)}
                   className={`rounded-full border px-3 py-1 text-xs font-medium transition ${filtro === m.id ? "border-primary bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}>
-                  {m.id === "todos" ? "Todos" : m.nome.split(" ")[0]}
+                  {m.id === FILTER_ALL ? "Todos" : m.nome.split(" ")[0]}
                 </button>
               ))}
+              {filtroAtivo && (
+                <button type="button" onClick={() => setFiltro(FILTER_ALL)}
+                  className="inline-flex items-center gap-1 rounded-full border border-destructive/30 bg-destructive/5 px-3 py-1 text-xs font-medium text-destructive transition hover:bg-destructive/10">
+                  <X className="h-3 w-3" />Limpar filtro
+                </button>
+              )}
             </div>
           </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
                 <tr><th className="px-4 py-3">Código OS</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Atividade</th><th className="px-4 py-3">Responsável</th><th className="px-4 py-3">Prazo</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Ações</th></tr>
               </thead>
               <tbody>
-                {lista.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhuma tarefa para este membro.</td></tr>}
+                {lista.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">{listaVazia}</td></tr>}
                 {lista.map((t) => {
                   const late = t.status !== "Concluído" && new Date(t.prazo + "T00:00:00") < today;
                   return (
