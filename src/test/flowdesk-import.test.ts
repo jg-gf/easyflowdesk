@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
-import { importSpreadsheet, getKpis, restoreState, updateStatus } from "@/lib/flowdesk-data";
+import { importSpreadsheet, getKpis, restoreState, updateStatus, extractOs } from "@/lib/flowdesk-data";
 
 function file(sheets: Record<string, unknown[][]>, date1904 = false): ArrayBuffer {
   const workbook = XLSX.utils.book_new();
