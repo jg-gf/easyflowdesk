@@ -141,7 +141,7 @@ function Index() {
           {storageError && <p role="alert" className="mt-3 text-sm text-warning-foreground">{storageError}</p>}
         </section>
         <section aria-label="KPIs do mês">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="mb-3 flex min-h-8 flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">KPIs do Mês</h2>
             {filtroAtivo ? (
               <button type="button" onClick={() => setFiltro(FILTER_ALL)}
