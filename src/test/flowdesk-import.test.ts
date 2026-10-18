@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
-import { importSpreadsheet, getKpis, restoreState, updateStatus } from "@/lib/flowdesk-data";
+import { importSpreadsheet, getKpis, restoreState, updateStatus, extractOs } from "@/lib/flowdesk-data";
 
 function file(sheets: Record<string, unknown[][]>, date1904 = false): ArrayBuffer {
   const workbook = XLSX.utils.book_new();
@@ -31,6 +31,21 @@ describe("FlowDesk Excel import", () => {
   });
   it("does not replace data with an empty import", async () => {
     await expect(importSpreadsheet(file({ Ana: [["Descrição", "Prazo"]] }), "a.xlsx")).rejects.toThrow("não contém tarefas");
+  });
+  it("extracts the OS code from the description and cleans residual punctuation", async () => {
+    const state = await importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["21-018-2026-001: Revisão estrutural", "18/10/2026"], ["[132-019-2026-001] Inspeção de campo", "19/10/2026"], ["Projeto 1221-005-2026-001 final", "20/10/2026"]] }), "a.xlsx");
+    expect(state.tasks.map((t) => t.os)).toEqual(["21-018-2026-001", "132-019-2026-001", "1221-005-2026-001"]);
+    expect(state.tasks.map((t) => t.descricao)).toEqual(["Revisão estrutural", "Inspeção de campo", "Projeto final"]);
+  });
+  it("prefers an explicit OS column over the description text", async () => {
+    const state = await importSpreadsheet(file({ Ana: [["OS", "Descrição", "Prazo"], ["21-018-2026-001", "Revisão 132-019-2026-001", "18/10/2026"]] }), "a.xlsx");
+    expect(state.tasks[0]?.os).toBe("21-018-2026-001");
+    expect(state.tasks[0]?.descricao).toBe("Revisão 132-019-2026-001");
+  });
+  it("keeps the automatic fallback code when no OS pattern exists", async () => {
+    expect(extractOs("Projeto sem código")).toEqual({ os: null, descricao: "Projeto sem código" });
+    const state = await importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["Projeto sem código", "18/10/2026"]] }), "a.xlsx");
+    expect(state.tasks[0]?.os).toBe("IMP-1-2");
   });
   it("recalculates KPIs from imported tasks and status changes", async () => {
     const state = await importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["A", "18/10/2026"], ["B", "30/10/2026"]] }), "a.xlsx");
