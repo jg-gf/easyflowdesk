@@ -8,11 +8,12 @@
 
 ## 🔗 Endereço da Aplicação Publicada
 
-👉 **[Acesse a aplicação em produção aqui](https://easyflowdesk.lovable.app/)** 
+https://easyflowdesk.lovable.app/
 
 <img src="./screenshot (1).png" alt="EasyFlowDesk - modo claro" width="80%" /> 
 
 <img src="./screenshot (2).png" alt="EasyFlowDesk - modo escuro" width="80%" />
+
 
 
 
