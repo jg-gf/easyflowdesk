@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
-import { importSpreadsheet, getKpis, restoreState, updateStatus, extractOs } from "@/lib/flowdesk-data";
+import { importSpreadsheet, getKpis, restoreState, updateStatus, extractOs, filterTasks, FILTER_ALL, kpiFilterKey } from "@/lib/flowdesk-data";
 
 function file(sheets: Record<string, unknown[][]>, date1904 = false): ArrayBuffer {
   const workbook = XLSX.utils.book_new();
@@ -69,6 +69,22 @@ describe("FlowDesk Excel import", () => {
     const finished = updateStatus(pending, first.os, "Concluído");
     expect(getKpis(finished, now)).toEqual({ active: 1, due: 0, doubts: 0, approval: 1 });
     expect(getKpis(updateStatus(finished, second.os, "Em Andamento"), now)).toEqual({ active: 1, due: 0, doubts: 0, approval: 0 });
+  });
+  it("filters the table with the same rules the KPI counters use", async () => {
+    const state = await importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["A", "18/10/2026"], ["B", "30/10/2026"], ["C", "19/10/2026"], ["D", "20/10/2026"], ["E", "21/10/2026"]] }), "a.xlsx");
+    const now = new Date("2026-10-17T12:00:00");
+    const [a, b, c, d, e] = state.tasks;
+    if (!a || !b || !c || !d || !e) throw new Error("Expected five imported tasks");
+    const marked = updateStatus(updateStatus(updateStatus(state.tasks, c.os, "Dúvida"), d.os, "Aguardando Aprovação"), e.os, "Concluído");
+    expect(filterTasks(marked, FILTER_ALL, now)).toHaveLength(5);
+    expect(filterTasks(marked, kpiFilterKey("active"), now).map((t) => t.os)).toEqual([a.os, b.os, c.os, d.os]);
+    expect(filterTasks(marked, kpiFilterKey("due"), now).map((t) => t.os)).toEqual([a.os, c.os, d.os]);
+    expect(filterTasks(marked, kpiFilterKey("doubts"), now).map((t) => t.os)).toEqual([c.os]);
+    expect(filterTasks(marked, kpiFilterKey("approval"), now).map((t) => t.os)).toEqual([d.os]);
+    expect(filterTasks(marked, kpiFilterKey("active"), now)).toHaveLength(getKpis(marked, now).active);
+    expect(filterTasks(marked, kpiFilterKey("due"), now)).toHaveLength(getKpis(marked, now).due);
+    expect(filterTasks(marked, "sheet-1", now)).toHaveLength(5);
+    expect(filterTasks(marked, "membro-inexistente", now)).toHaveLength(0);
   });
   it("restores imported members, tasks, and help markings from saved JSON", async () => {
     const state = await importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["A", "18/10/2026"]] }), "a.xlsx");
