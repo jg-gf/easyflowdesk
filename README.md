@@ -4,13 +4,17 @@
 [![Status do Projeto](https://img.shields.io/badge/Status-MVP%20Conclu%C3%ADdo-brightgreen)](https://lovable.dev)
 [![Plataforma](https://img.shields.io/badge/Deploy-Lovable%20Web-blue)](https://lovable.dev)
 
----
+
 
 ## 🔗 Endereço da Aplicação Publicada
 
 👉 **[Acesse a aplicação em produção aqui](https://easyflowdesk.lovable.app/)** 
 
----
+<img src="./screenshot (1).png" alt="EasyFlowDesk - modo claro" width="80%" /> 
+
+<img src="./screenshot (2).png" alt="EasyFlowDesk - modo escuro" width="80%" />
+
+
 
 ## 1. A Dor Escolhida e Por Que Ela Vale um Negócio
 
@@ -25,7 +29,7 @@ Em departamentos de engenharia e operações técnicas de empresas tradicionais,
 ### Por que vale um negócio? (Proposta de Valor)
 O **EasyFlowDesk** adota a filosofia **"Spreadsheet-to-Workflow"**: não luta contra o hábito da planilha, mas a transforma em um sistema ágil. O encarregado sobe o mesmo Excel de sempre e, em 2 segundos, a aplicação gera um painel visual autoexplicativo, empoderando o gestor com a visão do mês e o executor com canais rápidos de comunicação.
 
----
+
 
 ## 2. Tamanho de Mercado e Business Model Canvas
 
@@ -40,7 +44,7 @@ A estratégia do EasyFlowDesk nasce como **Intraempreendedorismo** com potencial
 * **TAM (Total Addressable Market - Mercado Total Potencial):**
   * O mercado global de soluções para equipes dependentes de planilhas (*Workflow Management* e *Spreadsheet-to-App*), onde bilhões de dólares são desperdiçados em horas de retrabalho com planilhas manuais.
 
----
+
 
 ### 2.2 Business Model Canvas (BMC)
 
@@ -56,7 +60,7 @@ A estratégia do EasyFlowDesk nasce como **Intraempreendedorismo** com potencial
 | **Parcerias Principais** | Encarregado da divisão piloto (patrocinador do teste) e equipe de TI corporativa. |
 | **Estrutura de Custos** | Custo de infraestrutura no MVP = **R$ 0,00** (hospedagem no Lovable/GitHub Pages, sem custos de servidores externos no piloto). |
 
----
+
 
 ## 3. Tese que o MVP Testa e o que Ficou Manual de Propósito
 
@@ -74,7 +78,7 @@ A estratégia do EasyFlowDesk nasce como **Intraempreendedorismo** com potencial
 * **Exportação Contínua como Backlog:** O foco inicial é o *consumo e acompanhamento*; se for necessário reportar externamente, a planilha original permanece como arquivo de segurança.
 * **Tratamento de Dados no Navegador:** Leitura direta via JavaScript (`SheetJS`), economizando tokens de API e mantendo os dados confidenciais restritos à máquina local do usuário.
 
----
+
 
 ## 4. Engenharia de Prompts (Mega Prompt e Refinamentos)
 
@@ -123,7 +127,7 @@ Adicione a funcionalidade de importar planilhas Excel (.xlsx) reais para o FlowD
 5. Salve o estado no localStorage do navegador para que os dados e marcações de dúvidas não sumam ao atualizar (F5) a página. Adicione um botão pequeno de "Voltar para dados de exemplo".
 ```
 
----
+
 
 ## 5. Tecnologias Utilizadas
 
