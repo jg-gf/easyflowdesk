@@ -217,6 +217,17 @@ function Index() {
                               <Check className="h-3.5 w-3.5" />Pronto para Aprovação
                             </button>
                           </div>
+                        ) : t.status === "Aguardando Aprovação" ? (
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setStatus(t.os, "Em Andamento")}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-warning/40 bg-warning/15 px-2.5 py-1.5 text-xs font-medium text-warning-foreground transition hover:bg-warning/25">
+                              <RotateCcw className="h-3.5 w-3.5" />Revisar
+                            </button>
+                            <button onClick={() => setStatus(t.os, "Concluído")}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-success/40 bg-success/15 px-2.5 py-1.5 text-xs font-medium text-success transition hover:bg-success/25">
+                              <CheckCircle2 className="h-3.5 w-3.5" />Concluir
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
