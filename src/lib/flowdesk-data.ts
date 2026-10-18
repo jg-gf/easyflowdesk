@@ -39,6 +39,19 @@ export function getKpis(tasks: Task[], now: Date) {
   };
 }
 
+const OS_PATTERN = /\b\d{2,4}-\d{3}-\d{4}-\d{3}\b/;
+
+export function extractOs(text: string): { os: string | null; descricao: string } {
+  const match = text.match(OS_PATTERN);
+  if (!match) return { os: null, descricao: text };
+  const descricao = text
+    .replace(OS_PATTERN, " ")
+    .replace(/[\s]*[[\](){}:;,.-]+[\s]*/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return { os: match[0], descricao };
+}
+
 export async function importSpreadsheet(buffer: ArrayBuffer, filename: string): Promise<DeskState> {
   const XLSX = await import("xlsx");
   let workbook: ReturnType<typeof XLSX.read>;
