@@ -90,6 +90,7 @@ export async function importSpreadsheet(buffer: ArrayBuffer, filename: string): 
     if (!header) throw new Error(`A aba “${name}” precisa das colunas Descrição e Prazo.`);
     const descriptionIndex = header.findIndex((cell) => normalize(cell) === "descricao");
     const dueIndex = header.findIndex((cell) => normalize(cell) === "prazo");
+    const osIndex = header.findIndex((cell) => normalize(cell) === "os");
     for (let rowIndex = headerIndex + 1; rowIndex < rows.length; rowIndex++) {
       const row = rows[rowIndex];
       if (!row || row.every((cell) => String(cell ?? "").trim() === "")) continue;
@@ -97,7 +98,10 @@ export async function importSpreadsheet(buffer: ArrayBuffer, filename: string): 
       if (!description) throw new Error(`Aba “${name}”, linha ${rowIndex + 1}: preencha a Descrição.`);
       const due = parseDate(row[dueIndex]);
       if (!due) throw new Error(`Aba “${name}”, linha ${rowIndex + 1}: Prazo inválido. Use uma data do Excel ou DD/MM/AAAA.`);
-      tasks.push({ os: `IMP-${index + 1}-${rowIndex + 1}`, cliente: "—", descricao: description, prazo: due, status: "Em Andamento", membro: member.id });
+      const osColumn = osIndex >= 0 ? String(row[osIndex] ?? "").trim() : "";
+      const extracted = extractOs(description);
+      const os = osColumn || extracted.os || `IMP-${index + 1}-${rowIndex + 1}`;
+      tasks.push({ os, cliente: "—", descricao: osColumn ? description : extracted.descricao, prazo: due, status: "Em Andamento", membro: member.id });
     }
   }
   if (!tasks.length) throw new Error("A planilha não contém tarefas. Os dados atuais foram mantidos.");
