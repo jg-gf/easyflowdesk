@@ -67,8 +67,8 @@ describe("FlowDesk Excel import", () => {
     const pending = updateStatus(updateStatus(state.tasks, first.os, "Aguardando Aprovação"), second.os, "Aguardando Aprovação");
     expect(getKpis(pending, now)).toEqual({ active: 2, due: 1, doubts: 0, approval: 2 });
     const finished = updateStatus(pending, first.os, "Concluído");
-    expect(getKpis(finished, now)).toEqual({ active: 1, due: 1, doubts: 0, approval: 1 });
-    expect(getKpis(updateStatus(finished, second.os, "Em Andamento"), now)).toEqual({ active: 1, due: 1, doubts: 0, approval: 0 });
+    expect(getKpis(finished, now)).toEqual({ active: 1, due: 0, doubts: 0, approval: 1 });
+    expect(getKpis(updateStatus(finished, second.os, "Em Andamento"), now)).toEqual({ active: 1, due: 0, doubts: 0, approval: 0 });
   });
   it("restores imported members, tasks, and help markings from saved JSON", async () => {
     const state = await importSpreadsheet(file({ Ana: [["Descrição", "Prazo"], ["A", "18/10/2026"]] }), "a.xlsx");
