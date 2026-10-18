@@ -27,17 +27,46 @@ export function updateStatus(tasks: Task[], os: string, status: Status): Task[] 
   return tasks.map((task) => task.os === os ? { ...task, status } : task);
 }
 
-export function getKpis(tasks: Task[], now: Date) {
+export const KPI_FILTERS = ["active", "due", "doubts", "approval"] as const;
+export type KpiFilter = (typeof KPI_FILTERS)[number];
+export const FILTER_ALL = "todos";
+export const kpiFilterKey = (key: KpiFilter) => `kpi:${key}`;
+
+function dayBounds(now: Date) {
   const today = new Date(now); today.setHours(0, 0, 0, 0);
   const week = new Date(today); week.setDate(today.getDate() + 7);
-  const active = tasks.filter((t) => t.status !== "Concluído");
+  return { today, week };
+}
+
+function matchesKpi(task: Task, key: KpiFilter, today: Date, week: Date) {
+  const active = task.status !== "Concluído";
+  if (key === "active") return active;
+  if (key === "doubts") return task.status === "Dúvida";
+  if (key === "approval") return task.status === "Aguardando Aprovação";
+  const date = new Date(`${task.prazo}T00:00:00`);
+  return active && date >= today && date <= week;
+}
+
+export function getKpis(tasks: Task[], now: Date) {
+  const { today, week } = dayBounds(now);
   return {
-    active: active.length,
-    due: active.filter((t) => { const date = new Date(`${t.prazo}T00:00:00`); return date >= today && date <= week; }).length,
-    doubts: tasks.filter((t) => t.status === "Dúvida").length,
-    approval: tasks.filter((t) => t.status === "Aguardando Aprovação").length,
+    active: tasks.filter((t) => matchesKpi(t, "active", today, week)).length,
+    due: tasks.filter((t) => matchesKpi(t, "due", today, week)).length,
+    doubts: tasks.filter((t) => matchesKpi(t, "doubts", today, week)).length,
+    approval: tasks.filter((t) => matchesKpi(t, "approval", today, week)).length,
   };
 }
+
+export function filterTasks(tasks: Task[], filtro: string, now: Date): Task[] {
+  if (filtro === FILTER_ALL) return tasks;
+  const key = filtro.startsWith("kpi:") ? filtro.slice(4) : "";
+  if ((KPI_FILTERS as readonly string[]).includes(key)) {
+    const { today, week } = dayBounds(now);
+    return tasks.filter((t) => matchesKpi(t, key as KpiFilter, today, week));
+  }
+  return tasks.filter((t) => t.membro === filtro);
+}
+
 
 const OS_PATTERN = /\b\d{2,4}-\d{3}-\d{4}-\d{3}\b/;
 

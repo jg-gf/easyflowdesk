@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Activity, CalendarClock, HelpCircle, CheckCircle2, LayoutDashboard, Users, ListTodo, Bell, Check, Upload, RotateCcw, Loader2, FileSpreadsheet } from "lucide-react";
+import { Activity, CalendarClock, HelpCircle, CheckCircle2, LayoutDashboard, Users, ListTodo, Bell, Check, Upload, RotateCcw, Loader2, FileSpreadsheet, X } from "lucide-react";
 import { members, tasks, type Status } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { STORAGE_KEY, restoreState, updateStatus, getKpis, importSpreadsheet, type DeskState } from "@/lib/flowdesk-data";
+import { STORAGE_KEY, restoreState, updateStatus, getKpis, filterTasks, importSpreadsheet, FILTER_ALL, kpiFilterKey, type DeskState } from "@/lib/flowdesk-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -36,7 +36,7 @@ function Index() {
   const [error, setError] = useState("");
   const [storageError, setStorageError] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
-  const [filtro, setFiltro] = useState("todos");
+  const [filtro, setFiltro] = useState<string>(FILTER_ALL);
   const taskList = desk.tasks;
   const team = desk.members;
   useEffect(() => {
@@ -71,7 +71,7 @@ function Index() {
     try {
       const imported = await importSpreadsheet(await file.arrayBuffer(), file.name);
       setDesk(imported);
-      setFiltro("todos");
+      setFiltro(FILTER_ALL);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível importar a planilha. Os dados atuais foram mantidos.");
     } finally { setLoading(false); }
@@ -79,22 +79,27 @@ function Index() {
   function resetExamples() {
     if (!window.confirm("Voltar para dados de exemplo? As tarefas atuais e suas marcações serão substituídas.")) return;
     setDesk({ members, tasks, source: null });
-    setFiltro("todos");
+    setFiltro(FILTER_ALL);
     setError("");
   }
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const counts = getKpis(taskList, today);
-  const lista = filtro === "todos" ? taskList : taskList.filter((t) => t.membro === filtro);
+  const lista = filterTasks(taskList, filtro, today);
   const nome = (id: string) => team.find((m) => m.id === id)?.nome ?? id;
   const setStatus = (os: string, status: Status) =>
     setDesk((prev) => ({ ...prev, tasks: updateStatus(prev.tasks, os, status) }));
 
   const kpis = [
-    { label: "Tarefas Ativas", value: counts.active, icon: Activity, cls: "border-border", ic: "text-primary bg-primary/10" },
-    { label: "Vencendo nesta Semana", value: counts.due, icon: CalendarClock, cls: "border-border", ic: "text-foreground bg-muted" },
-    { label: "Dúvidas Pendentes", value: counts.doubts, icon: HelpCircle, cls: "border-warning bg-warning/10", ic: "text-warning-foreground bg-warning/30" },
-    { label: "Prontas para Aprovação", value: counts.approval, icon: CheckCircle2, cls: "border-success bg-success/10", ic: "text-success bg-success/15" },
+    { label: "Tarefas Ativas", value: counts.active, icon: Activity, cls: "border-border", ic: "text-primary bg-primary/10", filter: kpiFilterKey("active") },
+    { label: "Vencendo nesta Semana", value: counts.due, icon: CalendarClock, cls: "border-border", ic: "text-foreground bg-muted", filter: kpiFilterKey("due") },
+    { label: "Dúvidas Pendentes", value: counts.doubts, icon: HelpCircle, cls: "border-warning bg-warning/10", ic: "text-warning-foreground bg-warning/30", filter: kpiFilterKey("doubts") },
+    { label: "Prontas para Aprovação", value: counts.approval, icon: CheckCircle2, cls: "border-success bg-success/10", ic: "text-success bg-success/15", filter: kpiFilterKey("approval") },
   ];
+  const filtroAtivo = filtro !== FILTER_ALL;
+  const filtroKpi = kpis.find((k) => k.filter === filtro);
+  const filtroNome = filtroKpi?.label ?? team.find((m) => m.id === filtro)?.nome ?? "filtro";
+  const listaVazia = filtroKpi ? `Nenhuma tarefa em “${filtroNome}”.` : "Nenhuma tarefa para este membro.";
+
 
   return (
     <div className="min-h-screen bg-background">
